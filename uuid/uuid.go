@@ -60,9 +60,14 @@ func Generate() (u UUID) {
 		time.Sleep(b)
 		totalBackoff += b
 
-		_, err := io.ReadFull(rand.Reader, u[:])
+		// If read failure happens, do not throw away whatever entropy
+		// ws returned. Continue and attempt to fill.
+		p := 0
+
+		bread, err := io.ReadFull(rand.Reader, u[p:])
 		if err != nil {
 			if retryOnError(err) && retries < maxretries {
+				p += bread
 				retries++
 				Loggerf("error generating version 4 uuid, retrying: %v", err)
 				continue
